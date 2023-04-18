@@ -5,14 +5,16 @@ from random import randint
 from faker import Faker
 from faker.generator import random
 
+import sys
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+if len(sys.argv) >= 3:
+    file_name = sys.argv[1]
+    table_name = sys.argv[2]
+    row_count = int(sys.argv[3])
+else:
+    file_name = "insert.sql"
+    table_name = "employee"
+    row_count = 5
 
 
 def first_name_and_gender():
@@ -71,20 +73,21 @@ def title_office_org_salary_bonus():
 
 # Press the green button in the gutter to run the script.
 def createSQL(row):
-    sql = "INSERT INTO employee (first_name, last_name, gender, personal_email, ssn, birth_date, start_date, office, title, org, accrued_holidays, salary, bonus) VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}')"\
-        .format(row[1], row[2], row[0], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[12], row[10], row[11])
+    sql = "INSERT INTO " + table_name + " (first_name, last_name, gender, personal_email, ssn, birth_date, start_date, " \
+                                        "office, title, org, accrued_holidays, salary, bonus) VALUES (" \
+                                        "'{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}')" \
+        .format(row[1], row[2], row[0], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[12], row[10],
+                row[11])
 
     # write SQL statement to file
-    with open('insert.sql', 'a') as f:
+    with open(file_name, 'a') as f:
         f.write(sql)
         f.write("\n")
-
 
 
 if __name__ == '__main__':
 
     fake = Faker()
-    numRows = 5
     # generate fake data
     d = dict()
     d['first_name_and_gender'] = first_name_and_gender
@@ -94,16 +97,18 @@ if __name__ == '__main__':
     d['birth_and_start_date'] = birth_and_start_date
     d['title_office_org_salary_bonus'] = title_office_org_salary_bonus
     d['accrued_holidays'] = lambda: {'accrued_holiday': random.randint(0, 20)}
-    sql = "CREATE TABLE employee (id int not null, first_name varchar(100), last_name varchar(100), gender varchar(1), personal_email varchar(100), ssn varchar(20), birth_date date, start_date date, office varchar(100), title varchar(100), org varchar(100), accrued_holidays smallint, salary int, bonus int);"
+    sql = "CREATE TABLE " + table_name + " (id int not null, first_name varchar(100), last_name varchar(100), gender " \
+                                         "varchar(1), personal_email varchar(100), ssn varchar(20), birth_date date, " \
+                                         "start_date date, office varchar(100), title varchar(100), org varchar(100), " \
+                                         "accrued_holidays smallint, salary int, bonus int); "
     # write SQL statement to file
-    with open('insert.sql', 'w') as f:
+    with open(file_name, 'w') as f:
         f.write(sql)
         f.write("\n")
 
-    for _ in range(numRows):
+    print(row_count)
+    for _ in range(row_count):
         deep_list = [list(d[k]().values()) for k in d.keys()]
         row = [item for sublist in deep_list for item in sublist]
+        print(row)
         createSQL(row)
-
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
