@@ -6,13 +6,17 @@ from faker import Faker
 from faker.generator import random
 
 import sys
+import os
+
 
 if len(sys.argv) >= 3:
     file_first_name = sys.argv[1]
     table_name = sys.argv[2]
+    os.makedirs(os.path.dirname(file_first_name), exist_ok=True)
 else:
-    file_first_name = "duck_db_main.sql"
+    file_first_name = "duckdb/duckdb_main.sql"
     table_name = "employee"
+    os.makedirs(os.path.dirname(file_first_name), exist_ok=True)
 
 title_and_salary_range = {'Engineer': [90, 120], 'Senior Engineer': [110, 140], 'Manager': [130, 150],
                           'Associate': [60, 80], 'VP': [150, 250]}
@@ -71,14 +75,14 @@ def salary_and_bonus():
 
 def title_office_org_salary_bonus():
     position = title_office_org()
-    positionIndex = 1 + list(title_and_salary_range.keys()).index(position['title'])
+    position_index = 1 + list(title_and_salary_range.keys()).index(position['title'])
     salary_range = title_and_salary_range[position['title']]
 
     salary = round(random.randint(1000 * salary_range[0], 1000 * salary_range[1]) / 1000) * 1000
     bonus_ratio = random.uniform(0.15, 0.2)
     bonus = round(salary * bonus_ratio / 500) * 500
     position.update({'salary': salary, 'bonus': bonus})
-    position.update({'title': positionIndex})
+    position.update({'title': position_index})
     return position
 
 
@@ -94,28 +98,29 @@ def add_insert_script_to_main_table(file_name, name_of_table, data_to_insert):
     writer_append_file(file_name, sql)
 
 
-def insert_postgres_table_creation():
-    sql = "CREATE TABLE jobs ( id int not null primary key, title varchar(100), min_salary int, max_salary int);"
+def insert_duckdb_table_creation():
+
+    sql = "CREATE SEQUENCE seq_job_id START 1;"
 
     writer_write_new_file(file_first_name, sql)
-    sql = "ALTER TABLE jobs ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY ( SEQUENCE NAME public.jobs_id_seq START WITH 1 INCREMENT BY 1 NO MINVALUE NO MAXVALUE CACHE 1);"
 
-    # write SQL statement to file
-    writer_append_file(file_first_name, sql)
-
-    sql = "CREATE TABLE office ( id int not null primary key, city varchar(100));"
+    sql = "CREATE TABLE job (id int not null primary key default nextval('seq_job_id'), title varchar(100), min_salary int, max_salary int);"
 
     writer_append_file(file_first_name, sql)
 
-    sql = "ALTER TABLE office ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY ( SEQUENCE NAME public.office_id_seq START WITH 1 INCREMENT BY 1 NO MINVALUE NO MAXVALUE CACHE 1);"
+    sql = "CREATE SEQUENCE seq_office_id START 1;"
 
     writer_append_file(file_first_name, sql)
 
-    sql = "CREATE TABLE org ( id int not null primary key, name varchar(100), office_id int not null, CONSTRAINT fk_org FOREIGN KEY(office_id) REFERENCES office(id) );"
+    sql = "CREATE TABLE office ( id int not null primary key default nextval('seq_office_id'), city varchar(100));"
 
     writer_append_file(file_first_name, sql)
 
-    sql = "ALTER TABLE org ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY ( SEQUENCE NAME public.org_id_seq START WITH 1 INCREMENT BY 1 NO MINVALUE NO MAXVALUE CACHE 1);"
+    sql = "CREATE SEQUENCE seq_org_id START 1;"
+
+    writer_append_file(file_first_name, sql)
+
+    sql = "CREATE TABLE org ( id int not null primary key default nextval('seq_org_id'), name varchar(100), office_id int not null, CONSTRAINT fk_org FOREIGN KEY(office_id) REFERENCES office(id) );"
 
     writer_append_file(file_first_name, sql)
 
@@ -130,7 +135,7 @@ def insert_postgres_table_creation():
 
 
 def insert_default_jobs(title, min_salary, max_salary):
-    sql = "INSERT INTO public.jobs (title, min_salary, max_salary) VALUES (" \
+    sql = "INSERT INTO job (title, min_salary, max_salary) VALUES (" \
           "'{}', '{}', '{}');" \
         .format(title, min_salary, max_salary)
 
@@ -138,13 +143,13 @@ def insert_default_jobs(title, min_salary, max_salary):
 
 
 def insert_default_orgs(name, office_id):
-    sql = "INSERT INTO public.org (name, office_id) VALUES ('{}', '{}');".format(name, office_id)
+    sql = "INSERT INTO org (name, office_id) VALUES ('{}', '{}');".format(name, office_id)
 
     writer_append_file(file_first_name, sql)
 
 
 def insert_default_offices(city):
-    sql = "INSERT INTO public.office (city) VALUES ('{}');" \
+    sql = "INSERT INTO office (city) VALUES ('{}');" \
         .format(city)
 
     writer_append_file(file_first_name, sql)
@@ -165,20 +170,20 @@ def writer_append_file(file_name, sql_command):
 
 
 def set_up_main_employee(file_name, name_of_table):
-    sql = "CREATE SEQUENCE seq_" + name_of_table + "id START 1;"
+    sql = "CREATE SEQUENCE seq_" + name_of_table + "_id START 1;"
 
     writer_write_new_file(file_name, sql)
 
-    sql = "CREATE TABLE " + name_of_table + " (id int not null primary key default nextval('seq_" + name_of_table + "id'), first_name varchar(100), last_name varchar(100), gender " \
+    sql = "CREATE TABLE " + name_of_table + " (id int not null primary key default nextval('seq_" + name_of_table + "_id'), first_name varchar(100), last_name varchar(100), gender " \
                                             "varchar(1), personal_email varchar(100), ssn varchar(20), birth_date date, " \
                                             "start_date date, org_id int not null, job_id int not null, " \
-                                            "accrued_holidays smallint, salary int, bonus int, CONSTRAINT fk_" + name_of_table + " FOREIGN KEY(job_id) REFERENCES jobs(id) , CONSTRAINT fk_" + name_of_table + "_org FOREIGN KEY(org_id) REFERENCES org(id) ); "
+                                            "accrued_holidays smallint, salary int, bonus int, CONSTRAINT fk_" + name_of_table + " FOREIGN KEY(job_id) REFERENCES job(id) , CONSTRAINT fk_" + name_of_table + "_org FOREIGN KEY(org_id) REFERENCES org(id) ); "
 
     writer_append_file(file_name, sql)
 
 
 def create_x_employees(name, number):
-    file_n = "employe_" + str(number) + ".sql"
+    file_n = "duckdb/employe_" + str(number) + ".sql"
     tbl_n = name + "_" + str(number)
     set_up_main_employee(file_n, tbl_n)
     for _ in range(number):
@@ -200,17 +205,12 @@ if __name__ == '__main__':
     d['title_office_org_salary_bonus'] = title_office_org_salary_bonus
     d['accrued_holidays'] = lambda: {'accrued_holiday': random.randint(0, 20)}
 
-    sql = "CREATE SEQUENCE seq_personid START 1;"
-
-    sql2 = "CREATE TABLE " + table_name + " (id integer primary key default nextval('seq_personid'), first_name varchar(100), last_name varchar(100), gender " \
-                                              "varchar(1), personal_email varchar(100), ssn varchar(20), birth_date date, " \
-                                              "start_date date, office varchar(100), title varchar(100), org varchar(100), " \
-                                              "accrued_holidays smallint, salary int, bonus int); "
+    insert_duckdb_table_creation()
 
     create_x_employees(table_name, 1)
     create_x_employees(table_name, 10)
     create_x_employees(table_name, 100)
-    create_x_employees(table_name, 1000)
-    create_x_employees(table_name, 10000)
-    create_x_employees(table_name, 100000)
-    create_x_employees(table_name, 1000000)
+    #create_x_employees(table_name, 1000)
+    #create_x_employees(table_name, 10000)
+    #create_x_employees(table_name, 100000)
+    #create_x_employees(table_name, 1000000)

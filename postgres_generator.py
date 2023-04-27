@@ -103,11 +103,11 @@ def insert_postgres_table_creation():
 
     #writer_write_new_file(file_first_name, sql)
 
-    sql = "CREATE TABLE jobs ( id int not null primary key, title varchar(100), min_salary int, max_salary int);"
+    sql = "CREATE TABLE job ( id int not null primary key, title varchar(100), min_salary int, max_salary int);"
 
     writer_write_new_file(file_first_name, sql)
 
-    sql = "ALTER TABLE jobs ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY ( SEQUENCE NAME public.jobs_id_seq START WITH 1 INCREMENT BY 1 NO MINVALUE NO MAXVALUE CACHE 1);"
+    sql = "ALTER TABLE job ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY ( SEQUENCE NAME public.job_id_seq START WITH 1 INCREMENT BY 1 NO MINVALUE NO MAXVALUE CACHE 1);"
 
     # write SQL statement to file
     writer_append_file(file_first_name, sql)
@@ -139,8 +139,7 @@ def insert_postgres_table_creation():
 
 
 def insert_default_jobs(title, min_salary, max_salary):
-    sql = "INSERT INTO public.jobs (title, min_salary, max_salary) VALUES (" \
-          "'{}', '{}', '{}');" \
+    sql = "INSERT INTO public.job (title, min_salary, max_salary) VALUES ('{}', '{}', '{}');" \
         .format(title, min_salary, max_salary)
 
     writer_append_file(file_first_name, sql)
@@ -177,7 +176,7 @@ def set_up_main_employee(file_name, name_of_table):
     sql = "CREATE TABLE " + name_of_table + " (id int not null primary key, first_name varchar(100), last_name varchar(100), gender " \
                                             "varchar(1), personal_email varchar(100), ssn varchar(20), birth_date date, " \
                                             "start_date date, org_id int not null, job_id int not null, " \
-                                            "accrued_holidays smallint, salary int, bonus int, CONSTRAINT fk_" + name_of_table + " FOREIGN KEY(job_id) REFERENCES jobs(id) , CONSTRAINT fk_" + name_of_table + "_org FOREIGN KEY(org_id) REFERENCES org(id) ); "
+                                            "accrued_holidays smallint, salary int, bonus int, CONSTRAINT fk_" + name_of_table + " FOREIGN KEY(job_id) REFERENCES job(id) , CONSTRAINT fk_" + name_of_table + "_org FOREIGN KEY(org_id) REFERENCES org(id) ); "
 
     writer_write_new_file(file_name, sql)
 
