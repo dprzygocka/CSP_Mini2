@@ -139,20 +139,20 @@ def insert_postgres_table_creation():
 
 
 def insert_default_jobs(title, min_salary, max_salary):
-    sql = "INSERT INTO public.job (title, min_salary, max_salary) VALUES ('{}', '{}', '{}');" \
+    sql = "INSERT INTO job (title, min_salary, max_salary) VALUES ('{}', '{}', '{}');" \
         .format(title, min_salary, max_salary)
 
     writer_append_file(file_first_name, sql)
 
 
 def insert_default_orgs(name, office_id):
-    sql = "INSERT INTO public.org (name, office_id) VALUES ('{}', '{}');".format(name, office_id)
+    sql = "INSERT INTO org (name, office_id) VALUES ('{}', '{}');".format(name, office_id)
 
     writer_append_file(file_first_name, sql)
 
 
 def insert_default_offices(city):
-    sql = "INSERT INTO public.office (city) VALUES ('{}');" \
+    sql = "INSERT INTO office (city) VALUES ('{}');" \
         .format(city)
 
     writer_append_file(file_first_name, sql)
